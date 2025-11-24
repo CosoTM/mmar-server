@@ -4,6 +4,7 @@ import metamodelRouter from "./metamodel/Metamodel.routes";
 import otherRouter from "./other.routes";
 import loginRouter from "./metamodel/Login.routes";
 import usergroupRouter from "./metamodel/Usergroups.route";
+import robotRouter from "./robot.routes";
 // import fileRouter from "./metamodel/Metamodel_files.routes";
 import usersRouter from "./metamodel/Metamodel_users.routes";
 import { database_test } from "../data/services/middleware/database_test";
@@ -41,6 +42,12 @@ routes.use("/userGroups", database_test, usergroupRouter
 routes.use("/users", database_test, usersRouter
     /* 
     #swagger.tags = ['Users']
+    */
+);
+
+routes.use("/robot", database_test, robotRouter
+    /* 
+    #swagger.tags = ['Robot']
     */
 );
 

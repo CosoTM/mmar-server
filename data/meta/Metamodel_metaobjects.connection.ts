@@ -105,6 +105,7 @@ class Metamodel_metaobjectsConnection implements CRUD {
             | "user_group"
             | "file"
             | "procedure"
+            | "robot" // Maybe (???)
     ): Promise<MetaObject | undefined | BaseError> {
         try {
             if (!newMetaObject) return undefined;
@@ -123,6 +124,7 @@ class Metamodel_metaobjectsConnection implements CRUD {
                     "port": "can_create_port",
                     "procedure": "can_create_procedure",
                     "user_group": "can_create_user_group",
+                    "robot": "can_create_robot",
                 };
                 const tableName = tableTypes[metaobjectType];
                 if (!tableName) return new HTTP500Error(`Invalid metaobject type: ${metaobjectType}`);
@@ -283,6 +285,7 @@ class Metamodel_metaobjectsConnection implements CRUD {
                     });
                     break;
                 default:
+                    console.log("probably goes here. Error:" + JSON.stringify(row))
                     // If the error is not a foreign key violation, throw an error with the error message
                     returnUuids.push(row.uuid);
                     break;

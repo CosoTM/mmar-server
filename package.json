@@ -3,7 +3,7 @@
   "version": "1.1.0",
   "description": "This the MMAR server for the MMAR project",
   "scripts": {
-    "start": "npm run tjs && npm run swagger && npm run build && node ../dist/mmar-server/index.js",
+    "start": "npm run tjs && npm run swagger && npm run build && nodemon",
     "debug": "nodemon",
     "docker:debug": "npm run tjs && npm run swagger && npm run build && nodemon",
     "build": "npm run build:global && npm run build:server",
