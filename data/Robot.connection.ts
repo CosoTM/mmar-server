@@ -13,6 +13,7 @@ class Metamodel_robotConnection implements CRUD {
         userUUID?: UUID
     ): Promise<Robot | undefined | BaseError> {
         try {
+            // Select all the properties of the robot corresponding to the UUID by joining the metaobject and robot_properties tables.
             const getRobotQuery = `SELECT * FROM metaobject m, robot_properties r WHERE m.uuid = r.uuid_robot AND r.uuid_robot = $1`;
             let newRobot;
 
@@ -67,7 +68,7 @@ class Metamodel_robotConnection implements CRUD {
                 return created_metaObject;
             }
 
-            // if created_metaObject is undefined, we just return undefined.
+            // If created_metaObject is undefined, we just return undefined.
             if (!created_metaObject) return undefined;
 
             // if created_metaObject has been created succesfully, we can now create the "robot" part.
@@ -79,7 +80,10 @@ class Metamodel_robotConnection implements CRUD {
                 newRobot.get_robotType()
             ]);
 
+            // Finally, we update the robot in the DB with the new values
             await this.update(client, created_metaObject.get_uuid(), newRobot);
+
+            // At the end, we return the newly created robot by fetching it from the DB.
             return await this.getByUuid(
                 client,
                 created_metaObject.get_uuid(),
@@ -97,8 +101,10 @@ class Metamodel_robotConnection implements CRUD {
         userUUID?: UUID
     ): Promise<Robot | undefined | BaseError> {
         try {
+            // This is just the query to update the robot-specific properties.
             const updateRobotQuery = `UPDATE robot_properties SET ip_address = $1, command_port = $2, feedback_port = $3, robot_type = $4 WHERE uuid_robot = $5`;
 
+            // A robot is also a metaobject, so we also update the "metaobject" part of it first.
             const updated_metaobj = await Metamodel_metaobject_connection.update(
                 client,
                 robotUUIDToUpdate,
@@ -106,7 +112,10 @@ class Metamodel_robotConnection implements CRUD {
                 userUUID,
             );
 
+            // If updated_metaobj is an error, something went wrong during the update of the 
+            // metaobject part, so we return the error.
             if (updated_metaobj instanceof BaseError) {
+                // If the error is specificallt a 403, or "no right" error, we return a specific message.
                 if (updated_metaobj.httpCode === 403) {
                     return new HTTP403NORIGHT(
                         `The user ${userUUID} has no right to update the class ${robotUUIDToUpdate}`,
@@ -114,8 +123,11 @@ class Metamodel_robotConnection implements CRUD {
                 }
                 return updated_metaobj;
             }
+
+            // If updated_metaobj is undefined, we just return undefined.
             if (!updated_metaobj) return undefined;
 
+            // If updated_metaobj has been updated succesfully, we can now update the "robot" part.
             await client.query(updateRobotQuery, [
                 newRobot.get_ipAddress(),
                 newRobot.get_CommandPort(),
@@ -124,6 +136,7 @@ class Metamodel_robotConnection implements CRUD {
                 updated_metaobj.get_uuid()
             ]);
 
+            // At the end, we return the updated robot by fetching it from the DB.
             return await this.getByUuid(
                 client,
                 robotUUIDToUpdate,
@@ -140,12 +153,11 @@ class Metamodel_robotConnection implements CRUD {
         userUUID?: UUID
     ): Promise<UUID[] | undefined | BaseError> {
         try {
+            // This is just the query to delete the robot-specific properties.
             const deleteRobot = `DELETE FROM robot_properties WHERE uuid_robot=$1`
             const test = await client.query(deleteRobot, [
                 UUIDToDelete
             ])
-
-            // console.log(test)
 
             const returned = await Metamodel_metaobject_connection.deleteByUuid(
                 client,

@@ -2,6 +2,10 @@ import { JointAngle } from "../../../../../mmar-global-data-structure/models/rob
 import { RobotType } from "../../../../../mmar-global-data-structure/models/robot/Robot_type";
 import { HTTP500Error } from "../../middleware/error_handling/standard_errors.middleware";
 
+/**
+ * @classdesc This is the Base Class for all Robot Resolvers. It defines the common methods and properties that every Robot Resolver must implement.
+ * @template T - All resolvers must specify the Robot Type that they can handle.
+ */
 export abstract class RobotBaseResolver<T extends RobotType>{
     /**
      * Identifies the Type of Robot the Resolver handles.

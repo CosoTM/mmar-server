@@ -1,6 +1,7 @@
 import { JointAngle } from "../../../../../mmar-global-data-structure/models/robot/Robot Data Objects/joints_angle";
 import { RobotType } from "../../../../../mmar-global-data-structure/models/robot/Robot_type";
 import { RobotBaseResolver } from "./Robot_base_resolver";
+
 export class RobotDobotE6SimResolver extends RobotBaseResolver<typeof RobotType.DOBOT_E6_SIM> {
     public readonly jointNumber: number = 6;
     public readonly forType = RobotType.DOBOT_E6_SIM;

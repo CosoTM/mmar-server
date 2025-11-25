@@ -32,13 +32,13 @@ robotRouter.post(
 );
 
 robotRouter.get(
-  "/get_joints/:uuid", // uuid or a name(?),
+  "/get_joints/:uuid",
   authenticate_token,
   Robot_socketController.get_robot_joints_by_uuid
 );
 
 robotRouter.post(
-  "/move_joints/:uuid", // uuid or a name(?),
+  "/move_joints/:uuid",
   authenticate_token,
   Robot_socketController.move_robot_joints_by_uuid
 );

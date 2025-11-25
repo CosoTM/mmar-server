@@ -1,12 +1,9 @@
-import { json, RequestHandler } from "express"
+import { RequestHandler } from "express"
 import { database_connection } from "../";
 import { Robot } from "../../mmar-global-data-structure";
-import { filter_object } from "../data/services/middleware/object_filter";
 import {
     BaseError,
     HTTP500Error,
-    HTTP403NORIGHT,
-    HTTP409CONFLICT
 } from "../data/services/middleware/error_handling/standard_errors.middleware";
 
 import Metamodel_Robot_connection from "../data/Robot.connection";
@@ -18,8 +15,6 @@ import { RobotDobotE6SimResolver } from "../data/services/robot/Command Resolver
 import { RobotResolverRegistry } from "../data/services/robot/robot_resolver_registry";
 import { plainToInstance } from "class-transformer";
 import { JointAngle } from "../../mmar-global-data-structure/models/robot/Robot Data Objects/joints_angle";
-import { RobotBaseResolver } from "../data/services/robot/Command Resolvers/Robot_base_resolver";
-import { RobotType } from "../../mmar-global-data-structure/models/robot/Robot_type";
 
 /**
  * @classdesc This class is used to handle all the requests concerning commands and status updates of robots via WebSockets.
@@ -27,14 +22,17 @@ import { RobotType } from "../../mmar-global-data-structure/models/robot/Robot_t
  * @class Robot_socket_controller
  */
 class Robot_socket_controller {
-    resolverRegistry = new RobotResolverRegistry(
-        [
+    // Robot Resolver Registry instance to retrieve the correct Resolver for each Robot Type.
+    resolverRegistry = new RobotResolverRegistry([
             new RobotTest1Resolver,
             new RobotTest2Resolver,
             new RobotDobotE6SimResolver
         ]
     )
 
+    /**
+     * @description - Retrieves a Robot using the given UUID and then connects to a it via a WebSocket.
+     */
     connect_robot_by_uuid: RequestHandler = async (req, res, next) => {
         const client = await database_connection.getPool().connect();
 
@@ -72,6 +70,9 @@ class Robot_socket_controller {
         }
     }
 
+    /**
+     * @description - Retrieves a Robot using the given UUID, connects to it via WebSocket and sends the command to get the current joints pose. 
+     */
     get_robot_joints_by_uuid: RequestHandler = async (req, res, next) => {
         const client = await database_connection.getPool().connect();
 
@@ -116,6 +117,9 @@ class Robot_socket_controller {
         }
     }
 
+    /**
+     * @description - Retrieves a Robot using the given UUID, connects to it via WebSocket and sends the command to move all its joints depending on the given Joint values in the request. 
+     */
     move_robot_joints_by_uuid: RequestHandler = async (req, res, next) => {
         const client = await database_connection.getPool().connect();
 

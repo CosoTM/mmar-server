@@ -18,6 +18,9 @@ import Metamodel_Robot_connection from "../../data/Robot.connection";
  * @class - Metamodel_Robot_controller
  */
 class Metamodel_Robot_controller {
+    /**
+     * @description - Defines a new Robot with the given UUID using the data provided in the request body.
+     */
     post_define_robot: RequestHandler = async (req, res, next) => {
         const client = await database_connection.getPool().connect();
 
@@ -59,19 +62,28 @@ class Metamodel_Robot_controller {
         }
     };
 
+    /**
+     * @description - Retrieves a Robot from the DB using the given UUID.
+     */
     get_robot_by_uuid: RequestHandler = async (req, res, next) =>{
         const client = await database_connection.getPool().connect();
 
         try {
             await client.query("BEGIN");
+
+            // Given the UUID in the request, we try and retrieve the Robot that corresponds to 
+            // that UUID from the DB.
             const sc = await Metamodel_Robot_connection.getByUuid(
                 client,
                 req.params.uuid,
                 req.body.tokendata.uuid
             );
+
+            // If what we got back is actually a Robot instance, we return it to the client.
             if (sc instanceof Robot) {
                 res.status(200).json(filter_object(sc, req.query.filter));
                 await client.query("COMMIT");
+            // Else, if we got back an error, we throw it so that it can be handled.
             } else if (sc instanceof BaseError) {
                 throw sc
             } else {
@@ -87,12 +99,17 @@ class Metamodel_Robot_controller {
         }
     }   
 
+    /**
+     * @description - Deletes the Robot corresponding to the given UUID from the DB. 
+     */
     // TODO: fix. Doesnt work and dont know why
     delete_robot_by_uuid: RequestHandler = async (req, res, next) => {
         const client = await database_connection.getPool().connect();
 
         try {
             await client.query("BEGIN");
+            // Given the UUID in the request, we try and delete the Robot that corresponds to 
+            // that UUID from the DB.
             const sc = await Metamodel_Robot_connection.deleteByUuid(
                 client,
                 req.params.uuid,

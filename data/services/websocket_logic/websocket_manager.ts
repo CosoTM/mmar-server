@@ -1,7 +1,10 @@
-import { BaseError, HTTP404Error, HTTP500Error } from "../middleware/error_handling/standard_errors.middleware";
+import { BaseError, HTTP500Error } from "../middleware/error_handling/standard_errors.middleware";
 import WebSocket, { RawData } from 'ws';
 
 // TODO: sometimes a connection could be closed without actually triggering the 'close' event. Implement some type of "heartbeat" system to close stale connections.
+
+// The possible WebSocker Error Codes that can be handled. They are defined as an "enum-like" object
+// so that we can use them easily without having to use "magic strings" everywhere.
 const WebSocketError = {
     ECONNREFUSED: "ECONNREFUSED",
     ETIMEDOUT: "ETIMEDOUT",
@@ -11,6 +14,8 @@ const WebSocketError = {
     EPIPE: "EPIPE"
 } as const
 
+// We define a type that represents any of the possible WebSocket Error Codes in the enum-like object as a series of string literals.
+// The advantage of this, is that if we add new errors, the type automatically updates to include them.
 type WebSocketError = typeof WebSocketError[keyof typeof WebSocketError]
 
 class WebSocketManager {
@@ -18,10 +23,10 @@ class WebSocketManager {
     private connections = new Map<string, WebSocket>();
     // Stores the Promises of connections that are being actively attempted to be established.
     private pendingConnections = new Map<string, Promise<WebSocket | undefined | BaseError>>()
-
+    // The timeout (in seconds) for connection attempts and message responses.
     private readonly _timeOutSeconds: number = 5
-    // private readonly _heartBeatInervalSeconds: number = 30
 
+    // For each possible WebSocket Error, a human-readable description is given.
     private readonly _errorDescriptions: Record<WebSocketError, string> = {
         ECONNREFUSED: "Cannot connect to server (connection refused). Are you sure the server is running?",
         ETIMEDOUT: "Connection timed out. The server is too slow or unreachable.",
@@ -60,19 +65,20 @@ class WebSocketManager {
         try {
             // Try and return the connection once its established (or once its definitive
             // that it cannot be established)
-            const t = await connectPromise;
-            return t;
+            return await connectPromise;
         } finally {
             // Always clean-up the pendingConnections Map. Even if a connection doesn't happen 
             // for whatever reason (even unexpected exceptions), the pending attempt is still 
-            // done and has to be removed from the map.
+            // completed and has to be removed from the map.
             this.pendingConnections.delete(url);
         }
     }
 
     // Given a URL, tries to establish a WebSocket connection.
     private async connect(url: string) {
+        // We build a new WebSocket object with the given URL.
         const ws: WebSocket = new WebSocket(url);
+        // We wait for the WebSocket to be opened (or to fail).
         const waitResult = await this.waitForOpen(ws);
 
         // If the waitResult is an Error or undefined, the connection failed for some reason.
@@ -114,8 +120,7 @@ class WebSocketManager {
                 setTimeout(() => {
                     resolve(new HTTP500Error(this._errorDescriptions[WebSocketError.ETIMEDOUT]))
                 },
-            this._timeOutSeconds * 1000)
-                // setTimeout(() => ws.emit('error', WebSocketError.ETIMEDOUT), this._timeOutSeconds * 1000)
+                this._timeOutSeconds * 1000)
             ),
         ])
     }
@@ -128,7 +133,8 @@ class WebSocketManager {
         const code = (e?.code ?? e) as WebSocketError;
         // If the code is in the "errorDescriptions" record use that, 
         // otherwise it's an undefined error. If for some reason the error has 
-        // no message property, we dont add it to the final message.
+        // no message property, we dont add the "raw error" description to 
+        // the final message.
         const msg = this._errorDescriptions[code] + (e.message ? ` Raw Error: ${e.message}` : '') || undefined;
         return (msg) ? new HTTP500Error(msg) : undefined
     }
@@ -208,18 +214,16 @@ class WebSocketManager {
         // state, so we just end the method here returning the error/undefined.
         if (ws instanceof BaseError || !ws) return ws
 
-        const sendData = (rawData: RawData) => {
-            // Instead of giving back the RawData directly to the callback function,
-            // we first translate it to a string with the 'rawDataToString' utility method.
-            callback(this.rawDataToString(rawData));
-        }
+        // Instead of giving back the RawData directly to the callback function,
+        // we first translate it to a string with the 'rawDataToString' utility method.
+        const sendData = (rawData: RawData) => callback(this.rawDataToString(rawData));
         ws.on("message", sendData);
 
         // Auto-cleanup on close
         // const cleanup = () => ws.off("message", callback);
         // ws.once("close", cleanup);
 
-        // This is the 'unsubscribe' function to remove the listener when no longer needed.
+        // A 'unsubscribe' function is returned to let the user stop listening to messages when needed.
         return () => {
             ws.off("message", sendData);
             //ws.off("close", cleanup);
@@ -233,6 +237,7 @@ class WebSocketManager {
      * @returns 
      */
     async manuallyCloseConnection(ip: string, port: number) {
+        // The URL for the connection is always "ws://ip:port"
         const url = `ws://${ip}:${port}`;
         const ws = this.connections.get(url);
 
@@ -245,7 +250,7 @@ class WebSocketManager {
     }
 
     /**
-     * @description Manually closes all established WebSocket connections.
+     * @description Manually closes all established WebSocket connections in the WebSocket Manager.
      */
     // TODO: in this way, exceptions are ignored. Should I care?
     async manuallyCloseAllConnections() {
