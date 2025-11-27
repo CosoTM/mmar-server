@@ -129,12 +129,13 @@ class Robot_socket_controller {
             // We retrieve the Robot from the DB via UUID.
             const sc = await Metamodel_Robot_connection.getByUuid(
                 client,
-                req.params.uuid,
+                req.params.uuid,  
                 req.body.tokendata.uuid
             );
 
             // We transform the request body into a 'JointAngle' instance.
             const jnts = plainToInstance(JointAngle, req.body)
+            console.log(jnts?.settings);
             
             // If what we get back is actually a Robot instance, we proceed.
             // TODO: check jnts validity
@@ -154,7 +155,7 @@ class Robot_socket_controller {
                 const response = await WebSocketManager.connectAndSend(
                     sc.get_ipAddress(), 
                     sc.get_CommandPort(), 
-                    resolver.moveJoints(jnts)
+                    resolver.moveJoints(jnts, jnts.settings?.motion)
                 )
                 
                 if (response instanceof BaseError) throw response

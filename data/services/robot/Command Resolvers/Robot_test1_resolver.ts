@@ -1,14 +1,16 @@
 import { JointAngle } from "../../../../../mmar-global-data-structure/models/robot/Robot Data Objects/joints_angle";
 import { RobotType } from "../../../../../mmar-global-data-structure/models/robot/Robot_type";
 import { RobotBaseResolver } from "./Robot_base_resolver";
+import { MotionsSettings, RobotSettings} from "../../../../../mmar-global-data-structure/models/robot/robot_settings";
+
 
 export class RobotTest1Resolver extends RobotBaseResolver<typeof RobotType.TEST_ROBOT1>{
 
     public readonly jointNumber: number = 6;
     public readonly forType = RobotType.TEST_ROBOT1;
 
-    moveToPoint(x: number, y: number, z: number, rx: number, ry: number, rz: number): string {
-        throw new Error("Method not implemented.");
+    moveToPoint(x: number, y: number, z: number, rx: number, ry: number, rz: number, settings?: Partial<MotionsSettings>): string {
+        return `MoveLinear[${x},${y},${z},${rx},${ry},${rz}]`;
     }
 
     moveJoints(angles: JointAngle): string {

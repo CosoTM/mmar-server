@@ -101,5 +101,5 @@
     "./**/*.json",
     "./**/*.ejs",
     "./**/*.pem"
-  ]
+, "../mmar-global-data-structure/models/robot/robot_settings.ts"  ]
 }
