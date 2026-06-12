@@ -73,7 +73,7 @@ class Metamodel_classesConnection implements CRUD {
 
         const attributes =
           await Metamodel_attributes_connection.getAllByParentUuid(
-            client,
+            client ,
             newClass.get_uuid(),
             userUuid,
           );

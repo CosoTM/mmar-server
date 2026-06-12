@@ -3,6 +3,7 @@ import { database_connection } from "../";
 import { Robot } from "../../mmar-global-data-structure";
 import {
     BaseError,
+    HTTP403Constrain,
     HTTP500Error,
 } from "../data/services/middleware/error_handling/standard_errors.middleware";
 
@@ -15,6 +16,9 @@ import { RobotDobotE6SimResolver } from "../data/services/robot/Command Resolver
 import { RobotResolverRegistry } from "../data/services/robot/robot_resolver_registry";
 import { plainToInstance } from "class-transformer";
 import { JointAngle } from "../../mmar-global-data-structure/models/robot/Robot Data Objects/joints_angle";
+import { buildRobotCommandPrompt } from "../data/services/robot/AI Commands Components/robot_command_prompt_builder";
+import { GithubModelCommandInterpreter } from "../data/services/robot/AI Commands Components/AI Interpreters/github_model_command_interpreter";
+import { RobotCommandStandardResponse } from "../data/services/robot/AI Commands Components/robot_command_standard_response";
 
 /**
  * @classdesc This class is used to handle all the requests concerning commands and status updates of robots via WebSockets.
@@ -135,10 +139,8 @@ class Robot_socket_controller {
 
             // We transform the request body into a 'JointAngle' instance.
             const jnts = plainToInstance(JointAngle, req.body)
-            console.log(jnts?.settings);
             
             // If what we get back is actually a Robot instance, we proceed.
-            // TODO: check jnts validity
             if (sc instanceof Robot) {
                 // With the Robot Type of the Robot we just got, we retrieve the correct Resolver to build the command.
                 const resolver = this.resolverRegistry.getResolver(sc.get_robotType())
@@ -162,6 +164,53 @@ class Robot_socket_controller {
                 if (!response) throw new HTTP500Error(`Failed to get joints of the robot ${req.params.uuid}.`);
 
                 res.status(200).json(resolver.parseReply(response))
+            }
+            else if (sc instanceof BaseError) throw sc
+            else throw new HTTP500Error(`Failed to get joints of the robot ${req.params.uuid}.`);
+        } catch (err) {
+            await client.query("ROLLBACK");
+            next(err);
+        } finally {
+            (await client).release();
+        }
+    }
+
+    execute_prompt: RequestHandler = async (req, res, next) => {
+        const client = await database_connection.getPool().connect();
+
+        try {
+            await client.query("BEGIN");
+
+            // We retrieve the Robot from the DB via UUID.
+            const sc = await Metamodel_Robot_connection.getByUuid(
+                client,
+                req.params.uuid,
+                req.body.tokendata.uuid
+            );
+
+            // If what we get back is actually a Robot instance, we proceed.
+            if (sc instanceof Robot) {
+                // With the Robot Type of the Robot we just got, we retrieve the correct Resolver to build the command.
+                const resolver = this.resolverRegistry.getResolver(sc.get_robotType())
+
+                // If we dont get back a Resolver, a wrong Robot Type was sent to the registry.
+                if(resolver instanceof BaseError) throw resolver
+
+                const userPrompt: string = req.body.prompt
+                if (!userPrompt || typeof userPrompt !== "string") throw new HTTP403Constrain("Invalid or missing prompt in the request body.")
+
+                const prompt = buildRobotCommandPrompt(sc, resolver.getSupportedCommands(), userPrompt)
+                
+                console.log("Generated Prompt: ", prompt)
+                
+                const interpreter = new GithubModelCommandInterpreter()
+                const aiResponse: RobotCommandStandardResponse = await interpreter.interpret(prompt)
+
+                if (!aiResponse) throw new HTTP500Error("Failed to interpret the prompt.")
+                if (aiResponse instanceof BaseError) throw aiResponse
+
+                res.status(200).json(aiResponse)
+                
             }
             else if (sc instanceof BaseError) throw sc
             else throw new HTTP500Error(`Failed to get joints of the robot ${req.params.uuid}.`);

@@ -43,3 +43,5 @@ logs/
 schemas.json
 
 config/swagger-output.json
+
+.env

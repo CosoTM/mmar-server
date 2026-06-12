@@ -1,5 +1,7 @@
 import { JointAngle } from "../../../../../mmar-global-data-structure/models/robot/Robot Data Objects/joints_angle";
 import { RobotType } from "../../../../../mmar-global-data-structure/models/robot/Robot_type";
+import { createMoveJointsCommand } from "../Robot Command Definition/robot_command_definition_factory";
+import { RobotCommandDefinition } from "../Robot Command Definition/robot_command_definiton";
 import { RobotBaseResolver } from "./Robot_base_resolver";
 
 export class RobotTest2Resolver extends RobotBaseResolver<typeof RobotType.TEST_ROBOT2>{
@@ -24,5 +26,11 @@ export class RobotTest2Resolver extends RobotBaseResolver<typeof RobotType.TEST_
 
     parseFeedbackData(data: string) {
         throw new Error("Method not implemented.");
+    }
+
+    getSupportedCommands(): RobotCommandDefinition[] {
+        return [
+            createMoveJointsCommand(this.jointNumber, "degrees")
+        ]
     }
 }

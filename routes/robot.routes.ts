@@ -43,4 +43,10 @@ robotRouter.post(
   Robot_socketController.move_robot_joints_by_uuid
 );
 
+robotRouter.put(
+  "/ai_command/:uuid",
+  authenticate_token,
+  Robot_socketController.execute_prompt
+);
+
 export default robotRouter;

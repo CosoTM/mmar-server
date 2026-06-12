@@ -1,6 +1,7 @@
 import { JointAngle } from "../../../../../mmar-global-data-structure/models/robot/Robot Data Objects/joints_angle";
 import { RobotType } from "../../../../../mmar-global-data-structure/models/robot/Robot_type";
 import { MotionsSettings} from "../../../../../mmar-global-data-structure/models/robot/robot_settings";
+import { RobotCommandDefinition } from "../Robot Command Definition/robot_command_definiton";
 
 
 /**
@@ -56,6 +57,6 @@ export abstract class RobotBaseResolver<T extends RobotType>{
      * @returns The data parsed in the format of the specific Robot Arm.
      */
     abstract parseFeedbackData(data:string):any
-
-
+    
+    abstract getSupportedCommands():RobotCommandDefinition[]
 }

@@ -29,6 +29,7 @@ class Metamodel_Robot_controller {
             // transform it directly into an instance of the Robot class.
             // https://github.com/typestack/class-transformer?tab=readme-ov-file#plaintoinstance
             const newRobotData = Robot.fromJS(req.body) as Robot;
+            console.log("Received new Robot data: ", newRobotData);
             newRobotData.uuid = req.params.uuid;
 
             // We call the "create" method from the connection class. If everything in connection

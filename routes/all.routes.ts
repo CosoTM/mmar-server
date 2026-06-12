@@ -40,14 +40,14 @@ routes.use("/userGroups", database_test, usergroupRouter
     */
 );
 routes.use("/users", database_test, usersRouter
-    /* 
+    /*  
     #swagger.tags = ['Users']
     */
 );
 
 routes.use("/robot", database_test, robotRouter
     /* 
-    #swagger.tags = ['Robot']
+   #swagger.tags = ['Robot']
     */
 );
 

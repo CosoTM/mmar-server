@@ -9,6 +9,7 @@ import portMetaRouter from "./Metamodel_ports.routes";
 import ruleMetaRouter from "./Metamodel_rules.routes";
 import procedureMetaRouter from "./Metamodel_procedure.routes";
 import fileMetaRouter from "./Metamodel_files.routes";
+import actionRouter from "./Metamodel_actions.routes";
 
 /**
  * @description This function is used to create the routes for the metamodel
@@ -23,7 +24,8 @@ metamodelRouter.use(relationclassMetaRouter);
 metamodelRouter.use(roleMetaRouter);
 metamodelRouter.use(portMetaRouter);
 metamodelRouter.use(procedureMetaRouter);
-
+metamodelRouter.use(actionRouter)
+ 
 metamodelRouter.use(ruleMetaRouter);
 
 metamodelRouter.use(fileMetaRouter);
