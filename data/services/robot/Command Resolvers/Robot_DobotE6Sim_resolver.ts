@@ -12,6 +12,7 @@ export class RobotDobotE6SimResolver extends RobotBaseResolver<typeof RobotType.
         throw new Error("Method not implemented.");
     }
     moveJoints(angles: JointAngle): string {
+        console.log(angles)
         return  `moveJ(${angles.joints.join(',')})`;
     }
     getJointPose(): string {

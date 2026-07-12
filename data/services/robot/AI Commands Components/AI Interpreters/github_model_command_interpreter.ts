@@ -3,7 +3,7 @@ import { RobotCommandStandardResponse } from "../robot_command_standard_response
 import { AICommandInterpreter } from "./ai_command_interpreter";
 
 export class GithubModelCommandInterpreter implements AICommandInterpreter {
-    async interpret(prompt: string): Promise<RobotCommandStandardResponse> {
+    async interpret(prompt: string): Promise<unknown> {
 
         const token = process.env.GITHUB_MODEL_API_KEY;
         const endpoint = "https://models.github.ai/inference";
@@ -32,6 +32,10 @@ export class GithubModelCommandInterpreter implements AICommandInterpreter {
             throw new Error("No response from the model");
         }
 
-        return JSON.parse(response) as RobotCommandStandardResponse;
+        try{
+             return JSON.parse(response);
+        }catch{
+            throw new Error("The response wasnt a JSON");
+        }
     }
 }

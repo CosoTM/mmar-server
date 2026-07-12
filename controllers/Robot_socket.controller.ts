@@ -16,9 +16,12 @@ import { RobotDobotE6SimResolver } from "../data/services/robot/Command Resolver
 import { RobotResolverRegistry } from "../data/services/robot/robot_resolver_registry";
 import { plainToInstance } from "class-transformer";
 import { JointAngle } from "../../mmar-global-data-structure/models/robot/Robot Data Objects/joints_angle";
-import { buildRobotCommandPrompt } from "../data/services/robot/AI Commands Components/robot_command_prompt_builder";
+import { buildRobotCommandPrompt, buildTestPrompt } from "../data/services/robot/AI Commands Components/Prompt Builders/robot_command_prompt_builder";
 import { GithubModelCommandInterpreter } from "../data/services/robot/AI Commands Components/AI Interpreters/github_model_command_interpreter";
-import { RobotCommandStandardResponse } from "../data/services/robot/AI Commands Components/robot_command_standard_response";
+import { RobotCommandResponse, RobotCommandStandardResponse } from "../data/services/robot/AI Commands Components/robot_command_standard_response";
+import { dispatchCommand } from "../data/services/robot/AI Commands Components/ai_standard_response_dispatcher";
+import ai_standard_response_validator from "../data/services/robot/AI Commands Components/ai_standard_response_validator";
+import { equal } from "assert";
 
 /**
  * @classdesc This class is used to handle all the requests concerning commands and status updates of robots via WebSockets.
@@ -139,7 +142,7 @@ class Robot_socket_controller {
 
             // We transform the request body into a 'JointAngle' instance.
             const jnts = plainToInstance(JointAngle, req.body)
-            
+
             // If what we get back is actually a Robot instance, we proceed.
             if (sc instanceof Robot) {
                 // With the Robot Type of the Robot we just got, we retrieve the correct Resolver to build the command.
@@ -188,6 +191,8 @@ class Robot_socket_controller {
                 req.body.tokendata.uuid
             );
 
+            const debug: boolean = req.body.debug !== null 
+
             // If what we get back is actually a Robot instance, we proceed.
             if (sc instanceof Robot) {
                 // With the Robot Type of the Robot we just got, we retrieve the correct Resolver to build the command.
@@ -204,12 +209,28 @@ class Robot_socket_controller {
                 console.log("Generated Prompt: ", prompt)
                 
                 const interpreter = new GithubModelCommandInterpreter()
-                const aiResponse: RobotCommandStandardResponse = await interpreter.interpret(prompt)
+                const aiResponse: unknown = await interpreter.interpret(prompt)
 
                 if (!aiResponse) throw new HTTP500Error("Failed to interpret the prompt.")
                 if (aiResponse instanceof BaseError) throw aiResponse
+                
+                console.log(aiResponse)
 
-                res.status(200).json(aiResponse)
+                const standardResponse: RobotCommandStandardResponse = ai_standard_response_validator.validateGeneralFormat(aiResponse)
+                const commandResponse: RobotCommandResponse = ai_standard_response_validator.checkResponseStatus(standardResponse)
+
+                const string_command: string = dispatchCommand(commandResponse, resolver)
+
+                const response = await WebSocketManager.connectAndSend(
+                    sc.get_ipAddress(), 
+                    sc.get_CommandPort(), 
+                    string_command
+                )
+                
+                if (response instanceof BaseError) throw response
+                if (!response) throw new HTTP500Error("")
+
+                res.status(200).json(resolver.parseReply(response))
                 
             }
             else if (sc instanceof BaseError) throw sc

@@ -9,7 +9,7 @@ export function createMoveJointsCommand(
         description: "Move the joints of the robot to the specified angles",
         parameters: [
             {
-                name: "angles",
+                name: "joints",
                 type: "number[]",
                 required: true,
                 description: "An array of angles for each joint of the robot",
